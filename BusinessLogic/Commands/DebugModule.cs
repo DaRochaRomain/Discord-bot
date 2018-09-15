@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord.Commands;
 
 namespace BusinessLogic.Commands
@@ -9,7 +10,14 @@ namespace BusinessLogic.Commands
         [Command("ping", RunMode = RunMode.Async)]
         public async Task Pong()
         {
-            await ReplyAsync("Pong");
+            try
+            {
+                await ReplyAsync("Pong");
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(e.ToString());
+            }
         }
     }
 }
