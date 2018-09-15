@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
@@ -34,7 +35,7 @@ namespace BusinessLogic.Services
 
         public async Task Initialize()
         {
-            const string token = "NDkwMjk3ODE4ODEzMTY5Njc0.Dn3RLQ.QtLcmOFGbZZ6kXCTrsbGSknGSVw";
+            var token = await ReadToken();
 
             await _discordClient.LoginAsync(TokenType.Bot, token);
             await _discordClient.StartAsync();
@@ -43,6 +44,16 @@ namespace BusinessLogic.Services
             await _commandService.AddModulesAsync(Assembly.GetExecutingAssembly());
 
             await Task.Delay(-1);
+        }
+
+        private async Task<string> ReadToken()
+        {
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            var folder = Path.GetDirectoryName(assemblyLocation);
+            var tokenFile = Path.Combine(folder, "Token.txt");
+            var token = await File.ReadAllTextAsync(tokenFile);
+
+            return token;
         }
     }
 }
