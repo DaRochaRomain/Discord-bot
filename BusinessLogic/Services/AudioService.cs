@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord.Audio;
@@ -22,13 +23,20 @@ namespace BusinessLogic.Services
 
         public async Task SendAsync(IAudioClient audioClient, string filePath)
         {
-            using (var ffmpeg = CreateProcess(filePath))
+            try
             {
-                using (var stream = audioClient.CreatePCMStream(AudioApplication.Music))
+                using (var ffmpeg = CreateProcess(filePath))
                 {
-                    await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream);
-                    await stream.FlushAsync();
+                    using (var stream = audioClient.CreatePCMStream(AudioApplication.Music))
+                    {
+                        await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream);
+                        await stream.FlushAsync();
+                    }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                //Ignore
             }
         }
     }
