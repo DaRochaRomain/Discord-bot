@@ -12,7 +12,7 @@ namespace BusinessLogic.Services
             var ffmpeg = new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = $"-i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             };
@@ -24,12 +24,12 @@ namespace BusinessLogic.Services
         {
             using (var ffmpeg = CreateProcess(path))
             {
-                var output = ffmpeg.StandardOutput.BaseStream;
+                var baseStream = ffmpeg.StandardOutput.BaseStream;
 
-                using (var discord = client.CreatePCMStream(AudioApplication.Mixed))
+                using (var audioOutStream = client.CreatePCMStream(AudioApplication.Mixed))
                 {
-                    await output.CopyToAsync(discord);
-                    await discord.FlushAsync();
+                    await baseStream.CopyToAsync(audioOutStream);
+                    await audioOutStream.FlushAsync();
                 }
             }
         }
