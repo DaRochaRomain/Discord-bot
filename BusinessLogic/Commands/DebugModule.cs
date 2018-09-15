@@ -4,9 +4,9 @@ using Discord.Commands;
 namespace BusinessLogic.Commands
 {
     [Group("!sbb")]
-    public class PingModule : ModuleBase
+    public class DebugModule : ModuleBase
     {
-        [Command("Ping", RunMode = RunMode.Sync)]
+        [Command("ping", RunMode = RunMode.Async)]
         public async Task Pong()
         {
             await ReplyAsync("Pong");

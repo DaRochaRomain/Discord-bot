@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 
 namespace BusinessLogic.Commands
 {
@@ -10,33 +10,28 @@ namespace BusinessLogic.Commands
     public class AudioModule : ModuleBase
     {
         private readonly IAudioService _audioService;
+        private readonly IConfiguration _configuration;
 
-        public AudioModule(IAudioService audioService)
+        public AudioModule(
+            IAudioService audioService,
+            IConfiguration configuration)
         {
             _audioService = audioService;
+            _configuration = configuration;
         }
 
-        [Command("test", RunMode = RunMode.Async)]
-        public async Task Test()
+        [Command("play", RunMode = RunMode.Async)]
+        public async Task Play(string audioName)
         {
-            if (Context.User is IGuildUser guildUser)
+            var filePath = _configuration[audioName];
+
+            if (filePath != null && Context.User is IGuildUser guildUser)
             {
                 var voiceChannel = guildUser.VoiceChannel;
+                var audioClient = await voiceChannel.ConnectAsync();
 
-                await voiceChannel.ConnectAsync(async audioClient =>
-                {
-                    try
-                    {
-                        await _audioService.SendAsync(audioClient, @"C:\Users\daroc\Downloads\100Hz_44100Hz_16bit_05sec.wav");
-                        await audioClient.StopAsync();
-
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                        throw;
-                    }
-                });
+                await _audioService.SendAsync(audioClient, filePath);
+                await audioClient.StopAsync();
             }
         }
     }

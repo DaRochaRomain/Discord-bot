@@ -41,12 +41,12 @@ namespace BusinessLogic.Services
             await _discordClient.StartAsync();
 
             _discordClient.MessageReceived += DiscordClientOnMessageReceived;
-            await _commandService.AddModulesAsync(Assembly.GetExecutingAssembly());
+            await _commandService.AddModulesAsync(Assembly.GetExecutingAssembly(), _serviceProvider);
 
             await Task.Delay(-1);
         }
 
-        private async Task<string> ReadToken()
+        private static async Task<string> ReadToken()
         {
             var assemblyLocation = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(assemblyLocation);

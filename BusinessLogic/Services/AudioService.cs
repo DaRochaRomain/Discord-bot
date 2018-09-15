@@ -9,27 +9,25 @@ namespace BusinessLogic.Services
     {
         private static Process CreateProcess(string path)
         {
-            var ffmpeg = new ProcessStartInfo
+            var processStartInfo = new ProcessStartInfo
             {
-                FileName = "ffmpeg",
-                Arguments = $"-i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                FileName = "ffmpeg.exe",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             };
 
-            return Process.Start(ffmpeg);
+            return Process.Start(processStartInfo);
         }
 
-        public async Task SendAsync(IAudioClient client, string path)
+        public async Task SendAsync(IAudioClient audioClient, string filePath)
         {
-            using (var ffmpeg = CreateProcess(path))
+            using (var ffmpeg = CreateProcess(filePath))
             {
-                var baseStream = ffmpeg.StandardOutput.BaseStream;
-
-                using (var audioOutStream = client.CreatePCMStream(AudioApplication.Mixed))
+                using (var stream = audioClient.CreatePCMStream(AudioApplication.Music))
                 {
-                    await baseStream.CopyToAsync(audioOutStream);
-                    await audioOutStream.FlushAsync();
+                    await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream);
+                    await stream.FlushAsync();
                 }
             }
         }
