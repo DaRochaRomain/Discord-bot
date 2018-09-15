@@ -49,7 +49,10 @@ namespace BusinessLogic.Commands
         {
             try
             {
-                var keys = _configuration.AsEnumerable().Select(e => e.Key);
+                var keys = _configuration
+                    .AsEnumerable()
+                    .Select(e => e.Key)
+                    .OrderBy(e => e, StringComparer.OrdinalIgnoreCase);
                 var playlist = keys.Aggregate((s1, s2) => $"{s1}{Environment.NewLine}{2}");
 
                 await ReplyAsync(playlist);
