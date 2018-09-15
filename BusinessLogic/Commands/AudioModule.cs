@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
@@ -29,13 +30,18 @@ namespace BusinessLogic.Commands
             {
                 var filePath = _configuration[audioName];
 
-                if (filePath != null && Context.User is IGuildUser guildUser)
+                if (!string.IsNullOrEmpty(filePath) && Context.User is IGuildUser guildUser)
                 {
-                    var voiceChannel = guildUser.VoiceChannel;
-                    var audioClient = await voiceChannel.ConnectAsync();
+                    if (File.Exists(filePath))
+                    {
+                        var voiceChannel = guildUser.VoiceChannel;
+                        var audioClient = await voiceChannel.ConnectAsync();
 
-                    await _audioService.SendAsync(audioClient, filePath);
-                    await audioClient.StopAsync();
+                        await _audioService.SendAsync(audioClient, filePath);
+                        await audioClient.StopAsync();
+                    }
+                    else
+                        await ReplyAsync($"File not found : {filePath}");
                 }
             }
             catch (Exception e)
@@ -44,18 +50,20 @@ namespace BusinessLogic.Commands
             }
         }
 
-        [Command("playlist")]
+        [Command("playlist", RunMode = RunMode.Async)]
         public async Task Playlist()
         {
             try
             {
-                var keys = _configuration
+                var playlist = _configuration
                     .AsEnumerable()
-                    .Select(e => e.Key)
-                    .OrderBy(e => e, StringComparer.OrdinalIgnoreCase);
-                var playlist = keys.Aggregate((s1, s2) => $"{s1}{Environment.NewLine}{2}");
+                    .Select(e => $"!sbb play {e.Key}")
+                    .OrderBy(e => e, StringComparer.OrdinalIgnoreCase)
+                    .Aggregate((s1, s2) => $"{s1}{Environment.NewLine}{s2}");
+                var embedBuilder = new EmbedBuilder();
 
-                await ReplyAsync(playlist);
+                embedBuilder.AddField("Playlist", playlist);
+                await Context.Channel.SendMessageAsync(string.Empty, false, embedBuilder.Build());
             }
             catch (Exception e)
             {
