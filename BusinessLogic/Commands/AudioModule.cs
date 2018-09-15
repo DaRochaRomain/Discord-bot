@@ -27,7 +27,6 @@ namespace BusinessLogic.Commands
                 {
                     try
                     {
-                        await audioClient.StopAsync();
                         await _audioService.SendAsync(audioClient, @"C:\Users\daroc\Downloads\100Hz_44100Hz_16bit_05sec.wav");
                         await audioClient.StopAsync();
 
