@@ -11,14 +11,13 @@ namespace Console
     {
         public static async Task Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder()
+            var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", true, true)
-                .Build();
+                .AddJsonFile("appsettings.json", true, true);
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<IDiscordProvider, DiscordProvider>()
-                .AddSingleton<IAudioService, AudioService>()
-                .AddSingleton<IConfiguration>(configuration)
+                .AddTransient<IDiscordProvider, DiscordProvider>()
+                .AddTransient<IAudioService, AudioService>()
+                .AddTransient<IConfiguration>(e => configurationBuilder.Build())
                 .BuildServiceProvider();
 
             var discordProvider = serviceProvider.GetService<IDiscordProvider>();

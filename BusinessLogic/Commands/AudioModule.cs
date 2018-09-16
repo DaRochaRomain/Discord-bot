@@ -35,10 +35,18 @@ namespace BusinessLogic.Commands
                     if (File.Exists(filePath))
                     {
                         var voiceChannel = guildUser.VoiceChannel;
-                        var audioClient = await voiceChannel.ConnectAsync();
 
-                        await _audioService.SendAsync(audioClient, filePath);
-                        await audioClient.StopAsync();
+                        try
+                        {
+                            var audioClient = await voiceChannel.ConnectAsync();
+
+                            await _audioService.SendAsync(audioClient, filePath);
+                            await audioClient.StopAsync();
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            //Ignored
+                        }
                     }
                     else
                         await ReplyAsync($"File not found : {filePath}");
