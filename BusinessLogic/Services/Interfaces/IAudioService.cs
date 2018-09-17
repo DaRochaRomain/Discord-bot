@@ -5,6 +5,6 @@ namespace BusinessLogic.Services.Interfaces
 {
     public interface IAudioService
     {
-        Task SendAsync(IAudioClient audioClient, string filePath);
+        Task SendAsync(IAudioClient audioClient, params string[] filePaths);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord.Audio;
@@ -8,26 +9,28 @@ namespace BusinessLogic.Services
 {
     public class AudioService : IAudioService
     {
-        public async Task SendAsync(IAudioClient audioClient, string filePath)
+        public async Task SendAsync(IAudioClient audioClient, params string[] filePaths)
         {
             try
             {
                 var outFormat = new WaveFormat(48000, 16, 2);
 
-                using (var mp3Reader = new Mp3FileReader(filePath))
+                foreach (var filePath in filePaths)
                 {
-                    using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat))
+                    using (var stream = audioClient.CreatePCMStream(AudioApplication.Mixed))
                     {
-                        using (var stream = audioClient.CreatePCMStream(AudioApplication.Mixed))
+                        using (var mp3Reader = new Mp3FileReader(filePath))
                         {
-                            var buffer = new byte[4096];
-                            resampler.ResamplerQuality = 60;
-                            int byteCount;
+                            using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat))
+                            {
+                                var buffer = new byte[4096];
+                                resampler.ResamplerQuality = 60;
+                                int byteCount;
 
-                            while ((byteCount = resampler.Read(buffer, 0, buffer.Length)) > 0)
-                                await stream.WriteAsync(buffer, 0, byteCount);
-
-                            await stream.FlushAsync();
+                                while ((byteCount = resampler.Read(buffer, 0, buffer.Length)) > 0)
+                                    await stream.WriteAsync(buffer, 0, byteCount);
+                                await stream.FlushAsync();
+                            }
                         }
                     }
                 }

@@ -66,12 +66,21 @@ namespace BusinessLogic.Commands
 
                         try
                         {
-                            var audioClient = await voiceChannel.ConnectAsync();
+                            //var audioClient = await voiceChannel.ConnectAsync();
 
+                            //foreach (var filePath in filePaths)
+                            //    await _audioService.SendAsync(audioClient, filePath);
+
+                            //await audioClient.StopAsync();
+
+                            //Fixes the fact that opening multiple times successively the stream of one audio client to send audio doesn't work
                             foreach (var filePath in filePaths)
-                                await _audioService.SendAsync(audioClient, filePath);
+                            {
+                                var audioClient = await voiceChannel.ConnectAsync();
 
-                            await audioClient.StopAsync();
+                                await _audioService.SendAsync(audioClient, filePath);
+                                await audioClient.StopAsync();
+                            }
                         }
                         catch (TaskCanceledException)
                         {
