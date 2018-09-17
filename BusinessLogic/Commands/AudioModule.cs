@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,15 +25,44 @@ namespace BusinessLogic.Commands
         }
 
         [Command("play", RunMode = RunMode.Async)]
-        public async Task Play(string audioName)
+        public async Task Play(params string[] audioNames)
         {
             try
             {
-                var filePath = _configuration[audioName];
-
-                if (!string.IsNullOrEmpty(filePath) && Context.User is IGuildUser guildUser)
+                if (audioNames != null && Context.User is IGuildUser guildUser)
                 {
-                    if (File.Exists(filePath))
+                    var audiosNotFound = new List<string>();
+                    var filePaths = new List<string>();
+                    var filesNotFound = new List<string>();
+
+                    foreach (var audioName in audioNames)
+                    {
+                        var filePath = _configuration[audioName];
+
+                        if (string.IsNullOrWhiteSpace(filePath))
+                            audiosNotFound.Add(audioName);
+                        else
+                        {
+                            if (File.Exists(filePath))
+                                filePaths.Add(filePath);
+                            else
+                                filesNotFound.Add(filePath);
+                        }
+                    }
+
+                    if (audiosNotFound.Count > 0)
+                    {
+                        foreach (var audioNotFound in audiosNotFound)
+                            await ReplyAsync($"Audio not found : {audioNotFound}");
+                    }
+
+                    if (filesNotFound.Count > 0)
+                    {
+                        foreach (var fileNotFound in filesNotFound)
+                            await ReplyAsync($"File not found : {fileNotFound}");
+                    }
+
+                    if (filePaths.Count > 0)
                     {
                         var voiceChannel = guildUser.VoiceChannel;
 
@@ -40,7 +70,9 @@ namespace BusinessLogic.Commands
                         {
                             var audioClient = await voiceChannel.ConnectAsync();
 
-                            await _audioService.SendAsync(audioClient, filePath);
+                            foreach (var filePath in filePaths)
+                                await _audioService.SendAsync(audioClient, filePath);
+
                             await audioClient.StopAsync();
                         }
                         catch (TaskCanceledException)
@@ -48,8 +80,6 @@ namespace BusinessLogic.Commands
                             //Ignored
                         }
                     }
-                    else
-                        await ReplyAsync($"File not found : {filePath}");
                 }
             }
             catch (Exception e)

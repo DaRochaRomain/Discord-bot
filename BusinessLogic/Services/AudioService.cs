@@ -1,36 +1,34 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord.Audio;
+using NAudio.Wave;
 
 namespace BusinessLogic.Services
 {
     public class AudioService : IAudioService
     {
-        private static Process CreateProcess(string path)
-        {
-            var processStartInfo = new ProcessStartInfo
-            {
-                FileName = "ffmpeg.exe",
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
-                UseShellExecute = false,
-                RedirectStandardOutput = true
-            };
-
-            return Process.Start(processStartInfo);
-        }
-
         public async Task SendAsync(IAudioClient audioClient, string filePath)
         {
             try
             {
-                using (var ffmpeg = CreateProcess(filePath))
+                var outFormat = new WaveFormat(48000, 16, 2);
+
+                using (var mp3Reader = new Mp3FileReader(filePath))
                 {
-                    using (var stream = audioClient.CreatePCMStream(AudioApplication.Music))
+                    using (var resampler = new MediaFoundationResampler(mp3Reader, outFormat))
                     {
-                        await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream);
-                        await stream.FlushAsync();
+                        using (var stream = audioClient.CreatePCMStream(AudioApplication.Mixed))
+                        {
+                            var buffer = new byte[4096];
+                            resampler.ResamplerQuality = 60;
+                            int byteCount;
+
+                            while ((byteCount = resampler.Read(buffer, 0, buffer.Length)) > 0)
+                                await stream.WriteAsync(buffer, 0, byteCount);
+
+                            await stream.FlushAsync();
+                        }
                     }
                 }
             }
