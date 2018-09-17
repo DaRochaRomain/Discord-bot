@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord;
@@ -24,6 +25,32 @@ namespace BusinessLogic.Commands
             _configuration = configuration;
         }
 
+        private async Task<List<string>> ParseAudioNames(params string[] audioNames)
+        {
+            var errorStringBuilder = new StringBuilder();
+            var filePaths = new List<string>();
+
+            foreach (var audioName in audioNames)
+            {
+                var filePath = _configuration[audioName];
+
+                if (string.IsNullOrWhiteSpace(filePath))
+                    errorStringBuilder.AppendLine($"Audio not found : {audioName}");
+                else
+                {
+                    if (File.Exists(filePath))
+                        filePaths.Add(filePath);
+                    else
+                        errorStringBuilder.AppendLine($"File not found : {filePath}");
+                }
+            }
+
+            if (errorStringBuilder.Length > 0)
+                await ReplyAsync(errorStringBuilder.ToString());
+
+            return filePaths;
+        }
+
         [Command("play", RunMode = RunMode.Async)]
         public async Task Play(params string[] audioNames)
         {
@@ -31,36 +58,7 @@ namespace BusinessLogic.Commands
             {
                 if (audioNames != null && Context.User is IGuildUser guildUser)
                 {
-                    var audiosNotFound = new List<string>();
-                    var filePaths = new List<string>();
-                    var filesNotFound = new List<string>();
-
-                    foreach (var audioName in audioNames)
-                    {
-                        var filePath = _configuration[audioName];
-
-                        if (string.IsNullOrWhiteSpace(filePath))
-                            audiosNotFound.Add(audioName);
-                        else
-                        {
-                            if (File.Exists(filePath))
-                                filePaths.Add(filePath);
-                            else
-                                filesNotFound.Add(filePath);
-                        }
-                    }
-
-                    if (audiosNotFound.Count > 0)
-                    {
-                        foreach (var audioNotFound in audiosNotFound)
-                            await ReplyAsync($"Audio not found : {audioNotFound}");
-                    }
-
-                    if (filesNotFound.Count > 0)
-                    {
-                        foreach (var fileNotFound in filesNotFound)
-                            await ReplyAsync($"File not found : {fileNotFound}");
-                    }
+                    var filePaths = await ParseAudioNames(audioNames);
 
                     if (filePaths.Count > 0)
                     {
