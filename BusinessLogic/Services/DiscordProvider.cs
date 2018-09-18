@@ -2,46 +2,49 @@
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using BusinessLogic.Commands;
 using BusinessLogic.Services.Interfaces;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
+using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.VoiceNext;
 
 namespace BusinessLogic.Services
 {
     public class DiscordProvider : IDiscordProvider
     {
-        private readonly CommandService _commandService;
-        private readonly DiscordSocketClient _discordClient;
         private readonly IServiceProvider _serviceProvider;
 
         public DiscordProvider(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-
-            _discordClient = new DiscordSocketClient();
-            _commandService = new CommandService();
-        }
-
-        private async Task DiscordClientOnMessageReceived(SocketMessage socketMessage)
-        {
-            if (socketMessage is IUserMessage userMessage)
-            {
-                var context = new CommandContext(_discordClient, userMessage);
-
-                await _commandService.ExecuteAsync(context, 0, _serviceProvider);
-            }
         }
 
         public async Task Initialize()
         {
             var token = await ReadToken();
+            var discordConfiguration = new DiscordConfiguration
+            {
+                Token = token,
+                TokenType = TokenType.Bot,
+                UseInternalLogHandler = true,
+                LogLevel = LogLevel.Debug
+            };
+            var commandsNextConfiguration = new CommandsNextConfiguration
+            {
+                CaseSensitive = false,
+                Services = _serviceProvider,
+                StringPrefixes = new[] {"!sbb"}
+            };
 
-            await _discordClient.LoginAsync(TokenType.Bot, token);
-            await _discordClient.StartAsync();
+            var discordClient = new DiscordClient(discordConfiguration);
+            var commands = discordClient.UseCommandsNext(commandsNextConfiguration);
+            discordClient.UseVoiceNext();
 
-            _discordClient.MessageReceived += DiscordClientOnMessageReceived;
-            await _commandService.AddModulesAsync(Assembly.GetExecutingAssembly(), _serviceProvider);
+            commands.RegisterCommands<DebugModule>();
+            commands.RegisterCommands<GeneralModule>();
+            commands.RegisterCommands<AudioModule>();
+
+            await discordClient.ConnectAsync();
 
             await Task.Delay(-1);
         }

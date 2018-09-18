@@ -5,14 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
-using Discord;
-using Discord.Commands;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
+using DSharpPlus.VoiceNext;
 using Microsoft.Extensions.Configuration;
 
 namespace BusinessLogic.Commands
 {
-    [Group("!sbb")]
-    public class AudioModule : ModuleBase
+    public class AudioModule : BaseCommandModule
     {
         private readonly IAudioService _audioService;
         private readonly IConfiguration _configuration;
@@ -25,7 +26,7 @@ namespace BusinessLogic.Commands
             _configuration = configuration;
         }
 
-        private async Task<List<string>> ParseAudioNames(params string[] audioNames)
+        private async Task<List<string>> ParseAudioNames(CommandContext commandContext, params string[] audioNames)
         {
             var errorStringBuilder = new StringBuilder();
             var filePaths = new List<string>();
@@ -46,73 +47,60 @@ namespace BusinessLogic.Commands
             }
 
             if (errorStringBuilder.Length > 0)
-                await ReplyAsync(errorStringBuilder.ToString());
+                await commandContext.RespondAsync(errorStringBuilder.ToString());
 
             return filePaths;
         }
 
-        [Command("play", RunMode = RunMode.Async)]
-        public async Task Play(params string[] audioNames)
+        [Command("play")]
+        public async Task Play(CommandContext commandContext, params string[] audioNames)
         {
             try
             {
-                if (audioNames != null && Context.User is IGuildUser guildUser)
+                if (audioNames != null)
                 {
-                    var filePaths = await ParseAudioNames(audioNames);
+                    var filePaths = await ParseAudioNames(commandContext, audioNames);
 
                     if (filePaths.Count > 0)
                     {
-                        var voiceChannel = guildUser.VoiceChannel;
+                        var voiceNext = commandContext.Client.GetVoiceNext();
+                        var channel = commandContext.Member?.VoiceState?.Channel;
 
-                        try
+                        if (channel != null)
                         {
-                            //var audioClient = await voiceChannel.ConnectAsync();
+                            var voiceNextConnection = await voiceNext.ConnectAsync(channel);
 
-                            //foreach (var filePath in filePaths)
-                            //    await _audioService.SendAsync(audioClient, filePath);
+                            await _audioService.SendAsync(voiceNextConnection, filePaths);
 
-                            //await audioClient.StopAsync();
-
-                            //Fixes the fact that opening multiple times successively the stream of one audio client to send audio doesn't work
-                            foreach (var filePath in filePaths)
-                            {
-                                var audioClient = await voiceChannel.ConnectAsync();
-
-                                await _audioService.SendAsync(audioClient, filePath);
-                                await audioClient.StopAsync();
-                            }
-                        }
-                        catch (TaskCanceledException)
-                        {
-                            //Ignored
+                            voiceNextConnection.Disconnect();
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-                await ReplyAsync(e.ToString());
+                await commandContext.RespondAsync(e.ToString());
             }
         }
 
-        [Command("playlist", RunMode = RunMode.Async)]
-        public async Task Playlist()
+        [Command("playlist")]
+        public async Task Playlist(CommandContext commandContext)
         {
             try
             {
                 var playlist = _configuration
                     .AsEnumerable()
-                    .Select(e => $"!sbb play {e.Key}")
+                    .Select(e => e.Key)
                     .OrderBy(e => e, StringComparer.OrdinalIgnoreCase)
                     .Aggregate((s1, s2) => $"{s1}{Environment.NewLine}{s2}");
-                var embedBuilder = new EmbedBuilder();
+                var embedBuilder = new DiscordEmbedBuilder();
 
                 embedBuilder.AddField("Playlist", playlist);
-                await Context.Channel.SendMessageAsync(string.Empty, false, embedBuilder.Build());
+                await commandContext.RespondAsync(string.Empty, false, embedBuilder.Build());
             }
             catch (Exception e)
             {
-                await ReplyAsync(e.ToString());
+                await commandContext.RespondAsync(e.ToString());
             }
         }
     }

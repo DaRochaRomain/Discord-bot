@@ -1,34 +1,27 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord.Commands;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 
 namespace BusinessLogic.Commands
 {
-    [Group("!sbb")]
-    public class DebugModule : ModuleBase
+    public class DebugModule : BaseCommandModule
     {
-        [Command("debug", RunMode = RunMode.Async)]
-        public async Task Debug()
+        [Command("debug")]
+        public async Task Debug(CommandContext commandContext)
         {
-            try
-            {
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync(e.ToString());
-            }
         }
 
-        [Command("ping", RunMode = RunMode.Async)]
-        public async Task Pong()
+        [Command("ping")]
+        public async Task Pong(CommandContext commandContext)
         {
             try
             {
-                await ReplyAsync("Pong");
+                await commandContext.RespondAsync("pong");
             }
             catch (Exception e)
             {
-                await ReplyAsync(e.ToString());
+                await commandContext.RespondAsync(e.ToString());
             }
         }
     }
