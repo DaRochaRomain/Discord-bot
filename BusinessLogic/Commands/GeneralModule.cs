@@ -1,28 +1,27 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.VoiceNext;
 
 namespace BusinessLogic.Commands
 {
-    [Group("!sbb")]
-    public class GeneralModule : ModuleBase
+    public class GeneralModule : BaseCommandModule
     {
         [Command("stop")]
-        public async Task Stop()
+        public async Task Stop(CommandContext commandContext)
         {
             try
             {
-                if (Context.User is IGuildUser guildUser)
-                {
-                    var voiceChannel = guildUser.VoiceChannel;
+                var voiceNext = commandContext.Client.GetVoiceNext();
+                var voiceNextConnection = voiceNext.GetConnection(commandContext.Member.Guild);
 
-                    await voiceChannel.DisconnectAsync();
-                }
+                voiceNextConnection?.Disconnect();
+                ;
             }
             catch (Exception e)
             {
-                await ReplyAsync(e.ToString());
+                await commandContext.RespondAsync(e.ToString());
             }
         }
     }
