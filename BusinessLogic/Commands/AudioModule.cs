@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
+using BusinessLogic.Utils;
+using BusinessLogic.Utils.Extensions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
 using Microsoft.Extensions.Configuration;
 
@@ -26,28 +26,21 @@ namespace BusinessLogic.Commands
             _configuration = configuration;
         }
 
-        private async Task<List<string>> ParseAudioNames(CommandContext commandContext, params string[] audioNames)
+        private List<string> GetFilePaths(IEnumerable<string> audioNames, out List<string> audiosNotFound)
         {
-            var errorStringBuilder = new StringBuilder();
+            var audiosFolder = _configuration["audiosfolder"];
             var filePaths = new List<string>();
+            audiosNotFound = new List<string>();
 
             foreach (var audioName in audioNames)
             {
-                var filePath = _configuration[audioName];
+                var filePath = $"{Path.Combine(audiosFolder, audioName)}.mp3";
 
-                if (string.IsNullOrWhiteSpace(filePath))
-                    errorStringBuilder.AppendLine($"Audio not found : {audioName}");
+                if (File.Exists(filePath))
+                    filePaths.Add(filePath);
                 else
-                {
-                    if (File.Exists(filePath))
-                        filePaths.Add(filePath);
-                    else
-                        errorStringBuilder.AppendLine($"File not found : {filePath}");
-                }
+                    audiosNotFound.Add(audioName);
             }
-
-            if (errorStringBuilder.Length > 0)
-                await commandContext.RespondAsync(errorStringBuilder.ToString());
 
             return filePaths;
         }
@@ -59,7 +52,14 @@ namespace BusinessLogic.Commands
             {
                 if (audioNames != null)
                 {
-                    var filePaths = await ParseAudioNames(commandContext, audioNames);
+                    var filePaths = GetFilePaths(audioNames, out var audiosNotFound);
+
+                    if (audiosNotFound.Count > 0)
+                    {
+                        var embed = EmbedUtils.GetEmbed("Audios not found", audiosNotFound);
+
+                        await commandContext.RespondAsync(null, false, embed);
+                    }
 
                     if (filePaths.Count > 0)
                     {
@@ -88,15 +88,49 @@ namespace BusinessLogic.Commands
         {
             try
             {
-                var playlist = _configuration
-                    .AsEnumerable()
-                    .Select(e => e.Key)
-                    .OrderBy(e => e, StringComparer.OrdinalIgnoreCase)
-                    .Aggregate((s1, s2) => $"{s1}{Environment.NewLine}{s2}");
-                var embedBuilder = new DiscordEmbedBuilder();
+                var audiosFolder = _configuration["audiosfolder"];
+                var audioNames = Directory.EnumerateFiles(audiosFolder, "*.mp3", SearchOption.TopDirectoryOnly)
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .OrderBy(e => e, StringComparer.OrdinalIgnoreCase);
+                var embed = EmbedUtils.GetEmbed("Playlist", audioNames);
 
-                embedBuilder.AddField("Playlist", playlist);
-                await commandContext.RespondAsync(string.Empty, false, embedBuilder.Build());
+                await commandContext.RespondAsync(null, false, embed);
+            }
+            catch (Exception e)
+            {
+                await commandContext.RespondAsync(e.ToString());
+            }
+        }
+
+        [Command("repeat")]
+        public async Task Repeat(CommandContext commandContext, string audioName, int repeat)
+        {
+            try
+            {
+                var filePaths = GetFilePaths(audioName.Yield(), out var audiosNotFound);
+
+                if (audiosNotFound.Count > 0)
+                {
+                    var embed = EmbedUtils.GetEmbed("Audios not found", audiosNotFound);
+
+                    await commandContext.RespondAsync(null, false, embed);
+                }
+
+                if (filePaths.Count > 0 && repeat > 0)
+                {
+                    var voiceNext = commandContext.Client.GetVoiceNext();
+                    var channel = commandContext.Member?.VoiceState?.Channel;
+
+                    if (channel != null)
+                    {
+                        var voiceNextConnection = await voiceNext.ConnectAsync(channel);
+
+                        for (var i = 0; i < repeat; i++)
+                            await _audioService.SendAsync(voiceNextConnection, filePaths);
+
+                        voiceNextConnection.Disconnect();
+                    }
+                }
             }
             catch (Exception e)
             {

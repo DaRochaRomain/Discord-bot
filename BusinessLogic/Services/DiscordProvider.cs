@@ -26,8 +26,7 @@ namespace BusinessLogic.Services
             {
                 Token = token,
                 TokenType = TokenType.Bot,
-                UseInternalLogHandler = true,
-                LogLevel = LogLevel.Debug
+                UseInternalLogHandler = true
             };
             var commandsNextConfiguration = new CommandsNextConfiguration
             {
