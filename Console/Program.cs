@@ -17,10 +17,15 @@ namespace Console
             var serviceProvider = new ServiceCollection()
                 .AddTransient<IDiscordProvider, DiscordProvider>()
                 .AddTransient<IAudioService, AudioService>()
+                .AddTransient<IGiphyService, GiphyService>()
                 .AddTransient<IConfiguration>(e => configurationBuilder.Build())
                 .BuildServiceProvider();
 
             var discordProvider = serviceProvider.GetService<IDiscordProvider>();
+            var giphyService = serviceProvider.GetService<IGiphyService>();
+
+            giphyService.Initialize();
+
             await discordProvider.Initialize();
         }
     }

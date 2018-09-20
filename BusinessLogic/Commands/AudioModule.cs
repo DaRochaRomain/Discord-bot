@@ -28,7 +28,7 @@ namespace BusinessLogic.Commands
 
         private List<string> GetFilePaths(IEnumerable<string> audioNames, out List<string> audiosNotFound)
         {
-            var audiosFolder = _configuration["audiosfolder"];
+            var audiosFolder = _configuration["AudiosFolder"];
             var filePaths = new List<string>();
             audiosNotFound = new List<string>();
 
