@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+using Discord.Commands;
 
 namespace BusinessLogic.Commands
 {
-    public class GifModule : BaseCommandModule
+    public class GifModule : ModuleBase<SocketCommandContext>
     {
         private readonly IGiphyService _giphyService;
 
@@ -16,17 +15,18 @@ namespace BusinessLogic.Commands
         }
 
         [Command("gif")]
-        public async Task Gif(CommandContext commandContext, string tag)
+        public async Task Gif(string tag)
         {
             try
             {
                 var gif = await _giphyService.GetRandomGif(tag);
 
-                await commandContext.RespondAsync(gif);
+                if (gif != null)
+                    await ReplyAsync(gif);
             }
             catch (Exception e)
             {
-                await commandContext.RespondAsync(e.ToString());
+                Console.WriteLine(e);
             }
         }
     }

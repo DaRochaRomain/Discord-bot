@@ -2,39 +2,35 @@
 using BusinessLogic.Services.Interfaces;
 using GiphyDotNet.Manager;
 using GiphyDotNet.Model.Parameters;
-using Microsoft.Extensions.Configuration;
 
 namespace BusinessLogic.Services
 {
     public class GiphyService : IGiphyService
     {
-        private readonly IConfiguration _configuration;
+        private readonly Giphy _giphy;
 
-        public GiphyService(IConfiguration configuration)
+        public GiphyService(Giphy giphy)
         {
-            _configuration = configuration;
+            _giphy = giphy;
         }
-
-        private static Giphy Giphy { get; set; }
 
         public async Task<string> GetRandomGif(string tag)
         {
-            var randomParameter = new RandomParameter
+            try
             {
-                Tag = tag
-            };
+                var randomParameter = new RandomParameter
+                {
+                    Tag = tag
+                };
+                var gifresult = await _giphy.RandomGif(randomParameter);
+                var url = gifresult.Data.Url;
 
-            var gifresult = await Giphy.RandomGif(randomParameter);
-            var url = gifresult.Data.Url;
-
-            return url;
-        }
-
-        public void Initialize()
-        {
-            var giphyToken = _configuration["GiphyToken"];
-
-            Giphy = new Giphy(giphyToken);
+                return url;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

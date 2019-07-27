@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using DSharpPlus.VoiceNext;
+﻿using System.Threading.Tasks;
+using Discord.Audio;
 
 namespace BusinessLogic.Services.Interfaces
 {
     public interface IAudioService
     {
-        Task SendAsync(VoiceNextConnection connection, List<string> filePaths);
+        Task SendAsync(IAudioClient client, string path);
     }
 }
