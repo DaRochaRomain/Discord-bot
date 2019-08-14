@@ -1,13 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
+using Discord;
 using Discord.Audio;
 
 namespace BusinessLogic.Services
 {
     public class AudioService : IAudioService
     {
-        public async Task SendAsync(IAudioClient client, string path)
+        public async Task PlayFiles(IVoiceChannel voiceChannel, params string[] files)
+        {
+            using (var audioClient = await voiceChannel.ConnectAsync())
+            {
+                foreach (var file in files)
+                    await SendAsync(audioClient, file);
+            }
+        }
+
+        private static async Task SendAsync(IAudioClient client, string path)
         {
             using (var process = CreateProcess(path))
             {

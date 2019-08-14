@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord.Commands;
 
-namespace BusinessLogic.Commands
+namespace BusinessLogic.Modules
 {
     public class DebugModule : ModuleBase<SocketCommandContext>
     {

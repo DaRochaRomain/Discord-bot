@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using BusinessLogic.Services.Interfaces;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -12,6 +13,7 @@ namespace BusinessLogic.Services
         private const string CommandPrefix = "!sbb ";
         private readonly CommandService _commandService;
         private readonly DiscordSocketClient _discordSocketClient;
+        private readonly IDiscordSocketClientService _discordSocketClientService;
         private readonly IServiceProvider _serviceProvider;
 
         public CommandHandlingService(IServiceProvider serviceProvider)
@@ -19,11 +21,13 @@ namespace BusinessLogic.Services
             _serviceProvider = serviceProvider;
             _discordSocketClient = serviceProvider.GetService<DiscordSocketClient>();
             _commandService = serviceProvider.GetService<CommandService>();
+            _discordSocketClientService = serviceProvider.GetService<IDiscordSocketClientService>();
         }
 
         public void Initialize()
         {
             _discordSocketClient.MessageReceived += DiscordSocketClientOnMessageReceived;
+            _discordSocketClient.UserVoiceStateUpdated += _discordSocketClientService.DiscordSocketClientOnUserVoiceStateUpdated;
         }
 
         private async Task DiscordSocketClientOnMessageReceived(SocketMessage socketMessage)

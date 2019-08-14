@@ -1,13 +1,16 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using BusinessLogic.Commands;
+using BusinessLogic.Modules;
+using BusinessLogic.Modules.Interfaces;
 using BusinessLogic.Services;
 using BusinessLogic.Services.Interfaces;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using GiphyDotNet.Manager;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,8 +45,16 @@ namespace Console
                 .AddSingleton<CommandHandlingService>()
                 .AddTransient<IAudioService, AudioService>()
                 .AddTransient<IGiphyService, GiphyService>()
+                .AddTransient<IDiscordSocketClientService, DiscordSocketClientService>()
+                .AddTransient<IAudioModule, AudioModule>()
                 .BuildServiceProvider();
+
+            GlobalConfiguration.Configuration.UseMemoryStorage();
+            GlobalConfiguration.Configuration.UseColouredConsoleLogProvider();
+            GlobalConfiguration.Configuration.UseActivator(new JobActivator(_serviceProvider));
         }
+        
+        
 
         private static async Task InitializeDiscord()
         {
@@ -55,7 +66,9 @@ namespace Console
 
             await discordSocketClient.LoginAsync(TokenType.Bot, token);
             await discordSocketClient.StartAsync();
-            await Task.Delay(-1);
+            
+            using (new BackgroundJobServer())
+                System.Console.ReadLine();
         }
 
         private static async Task DiscordSocketClientOnLog(LogMessage arg)

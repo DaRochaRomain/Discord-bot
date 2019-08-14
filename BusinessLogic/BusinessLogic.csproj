@@ -7,7 +7,9 @@
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.1.1" />
     <PackageReference Include="GiphyDotNet.NetStandard" Version="1.0.0" />
+    <PackageReference Include="Hangfire" Version="1.7.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
+    <PackageReference Include="NaturalSort.Extension" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +18,7 @@
     <Compile Remove="Commands\GeneralModule.cs" />
     <Compile Remove="Services\Interfaces\IDiscordProvider.cs" />
     <Compile Remove="Services\DiscordProvider.cs" />
+    <Compile Remove="Modules\GeneralModule.cs" />
   </ItemGroup>
 
   <ItemGroup>

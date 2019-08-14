@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using BusinessLogic.Services.Interfaces;
 using Discord.Commands;
 
-namespace BusinessLogic.Commands
+namespace BusinessLogic.Modules
 {
     public class GifModule : ModuleBase<SocketCommandContext>
     {
